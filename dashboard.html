@@ -31,40 +31,47 @@
   <div id="cloud"></div>
 
   <script>
-    const DATA_URL = "https://script.google.com/macros/s/AKfycbwWDyuw9r1IQCWZzGBC2up3pN53X3BpjQRnCDRbZpXsmQ70UYTTjUQQUUXeR80YkqFXTg/exec";  // <--- replace this
+    // ORIGINAL URL
+    const RAW_API = "https://script.google.com/macros/s/AKfycbwWDyuw9r1IQCWZzGBC2up3pN53X3BpjQRnCDRbZpXsmQ70UYTTjUQQUUXeR80YkqFXTg/exec";
+
+    // CORS-PROXY WRAPPER
+    const DATA_URL = "https://corsproxy.io/?" + encodeURIComponent(RAW_API);
 
     async function loadData() {
-      const response = await fetch(DATA_URL);
-      const entries = await response.json();
+      try {
+        const response = await fetch(DATA_URL);
+        const entries = await response.json();
 
-      const frequency = {};
+        const frequency = {};
 
-      // count words
-      entries.forEach(entry => {
-        entry.words.forEach(word => {
-          word = word.trim();
-          if (word) {
-            frequency[word] = (frequency[word] || 0) + 1;
-          }
+        // Count word frequencies
+        entries.forEach(entry => {
+          entry.words.forEach(word => {
+            word = word.trim();
+            if (word) {
+              frequency[word] = (frequency[word] || 0) + 1;
+            }
+          });
         });
-      });
 
-      // convert to list for wordcloud2.js
-      const wordList = Object.keys(frequency).map(w => [
-        w,
-        frequency[w] * 10 // scaling factor
-      ]);
+        // Prepare list for the wordcloud library
+        const wordList = Object.keys(frequency).map(w => [
+          w,
+          frequency[w] * 10
+        ]);
 
-      WordCloud(document.getElementById("cloud"), {
-        list: wordList,
-        gridSize: 12,
-        weightFactor: 4,
-        color: () => {
-          return "hsl(" + Math.random() * 360 + ", 70%, 50%)"; // random colors
-        },
-        rotateRatio: 0.1,
-        backgroundColor: "#f6f6f6"
-      });
+        WordCloud(document.getElementById("cloud"), {
+          list: wordList,
+          gridSize: 12,
+          weightFactor: 4,
+          color: () => "hsl(" + Math.random() * 360 + ", 70%, 50%)",
+          rotateRatio: 0.1,
+          backgroundColor: "#f6f6f6"
+        });
+
+      } catch (err) {
+        console.error("Error loading word cloud:", err);
+      }
     }
 
     loadData();
