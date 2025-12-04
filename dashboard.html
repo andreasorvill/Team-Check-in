@@ -3,130 +3,46 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SANA – Weekly Word Cloud</title>
+  <title>SANA – Word Cloud Dashboard</title>
 
-  <!-- Epiroc Theme -->
-  <style>
-    :root {
-      --epiroc-yellow: #f2c300;
-      --epiroc-dark: #003057;
-      --bg-light: #f6f6f6;
-    }
-
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      background: var(--bg-light);
-      color: var(--epiroc-dark);
-      text-align: center;
-    }
-
-    header {
-      background: var(--epiroc-dark);
-      padding: 20px;
-      color: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 15px;
-    }
-
-    header img {
-      height: 45px;
-    }
-
-    h1 {
-      margin-top: 20px;
-      color: var(--epiroc-dark);
-      font-size: 28px;
-    }
-
-    p {
-      font-size: 16px;
-      margin-bottom: 25px;
-    }
-
-    #cloud-container {
-      width: 95%;
-      max-width: 1100px;
-      margin: 0 auto;
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    }
-
-    #cloud {
-      height: 75vh;
-      width: 100%;
-    }
-
-    .back-btn {
-      margin-top: 20px;
-      display: inline-block;
-      padding: 12px 24px;
-      background: var(--epiroc-yellow);
-      color: var(--epiroc-dark);
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      text-decoration: none;
-      transition: 0.2s ease;
-    }
-
-    .back-btn:hover {
-      background: #ffdd33;
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css">
 
   <!-- WordCloud2.js -->
   <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.3/src/wordcloud2.min.js"></script>
 </head>
 
-<body>
+<body class="dashboard-body">
 
-  <!-- HEADER WITH LOGO -->
-  <header>
-    <img src="images/SANA_Yellow_bkg.png" alt="SANA Logo" />
-    <img src="images/SANA_simple.png" alt="Epiroc Logo" />
-  </header>
+  <div class="dashboard-container">
+    
+    <img src="images/SANA_simple.png" class="dashboard-logo" alt="SANA Logo">
 
-  <h1>Weekly Word Cloud</h1>
-  <p>The most frequently selected words appear largest.</p>
+    <h1 class="dashboard-title">Weekly Word Cloud</h1>
+    <p class="dashboard-subtitle">The most frequently selected words appear largest.</p>
 
-  <div id="cloud-container">
-    <div id="cloud"></div>
+    <div id="cloud" class="cloud-box"></div>
+
+    <button class="back-btn" onclick="window.location.href='index.html'">
+      ← Back to Check-In
+    </button>
+
   </div>
 
-  <!-- Optional Back Button (Admin Only) -->
-  <a href="index.html" class="back-btn" id="backBtn" style="display:none;">
-    ← Back to Check-In
-  </a>
-
   <script>
-    /****** ADMIN ACCESS CHECK ******/
-    const isAdmin = localStorage.getItem("sanaRole") === "admin";
-    if (isAdmin) {
-      document.getElementById("backBtn").style.display = "inline-block";
-    }
-
-    /****** LOAD WORD CLOUD ******/
-    const RAW_API = "https://script.google.com/macros/s/AKfycbwWDyuw9r1IQCWZzGBC2up3pN53X3BpjQRnCDRbZpXsmQ70UYTTjUQQUUXeR80YkqFXTg/exec";
+    const DATA_URL = "https://script.google.com/macros/s/AKfycbwWDyuw9r1IQCWZzGBC2up3pN53X3BpjQRnCDRbZpXsmQ70UYTTjUQQUUXeR80YkqFXTg/exec";
 
     async function loadData() {
       try {
-        const response = await fetch(RAW_API);
+        const response = await fetch(DATA_URL);
         const entries = await response.json();
 
         const frequency = {};
 
         entries.forEach(entry => {
           entry.words.forEach(word => {
+            if (!word) return;
             word = word.trim();
-            if (word) {
-              frequency[word] = (frequency[word] || 0) + 1;
-            }
+            frequency[word] = (frequency[word] || 0) + 1;
           });
         });
 
@@ -139,9 +55,9 @@
           list: wordList,
           gridSize: 12,
           weightFactor: 4,
-          color: () => "hsl(" + Math.random() * 360 + ", 70%, 50%)",
+          color: () => "hsl(" + Math.random() * 360 + ", 80%, 60%)",
           rotateRatio: 0.1,
-          backgroundColor: "#ffffff"
+          backgroundColor: "transparent"
         });
 
       } catch (err) {
