@@ -14,7 +14,7 @@
 <body class="dashboard-body">
 
   <div class="dashboard-container">
-    
+
     <img src="images/SANA_simple.png" class="dashboard-logo" alt="SANA Logo">
 
     <h1 class="dashboard-title">Weekly Word Cloud</h1>
@@ -31,44 +31,46 @@
   <script>
     const DATA_URL = "https://script.google.com/macros/s/AKfycbwWDyuw9r1IQCWZzGBC2up3pN53X3BpjQRnCDRbZpXsmQ70UYTTjUQQUUXeR80YkqFXTg/exec";
 
- async function loadData() {
-  try {
-    const response = await fetch(DATA_URL);
-    const entries = await response.json();  // JSON now works!
+    async function loadData() {
+      try {
+        const response = await fetch(DATA_URL);
 
-    const frequency = {};
+        // API RETURNS PURE JSON → parse normally
+        const entries = await response.json();
 
-    entries.forEach(entry => {
-      entry.words.forEach(word => {
-        if (!word) return;
-        word = word.trim();
-        frequency[word] = (frequency[word] || 0) + 1;
-      });
-    });
+        const frequency = {};
 
-    const wordList = Object.keys(frequency).map(w => [
-      w,
-      frequency[w] * 10
-    ]);
+        // Count each word
+        entries.forEach(entry => {
+          entry.words.forEach(word => {
+            if (!word) return;
+            const clean = word.trim();
+            frequency[clean] = (frequency[clean] || 0) + 1;
+          });
+        });
 
-    WordCloud(document.getElementById("cloud"), {
-      list: wordList,
-      gridSize: 12,
-      weightFactor: 4,
-      color: () => "hsl(" + Math.random() * 360 + ", 80%, 60%)",
-      rotateRatio: 0.1,
-      backgroundColor: "transparent"
-    });
+        // Convert to list for wordcloud2
+        const wordList = Object.keys(frequency).map(w => [
+          w,
+          frequency[w] * 10
+        ]);
 
-  } catch (err) {
-    console.error("Error loading cloud:", err);
-  }
-}
+        WordCloud(document.getElementById("cloud"), {
+          list: wordList,
+          gridSize: 12,
+          weightFactor: 5,
+          color: () => "hsl(" + Math.random() * 360 + ", 80%, 60%)",
+          rotateRatio: 0.1,
+          backgroundColor: "transparent"
+        });
 
-loadData();
+      } catch (err) {
+        console.error("Error loading cloud:", err);
+      }
+    }
 
+    loadData();
   </script>
 
 </body>
 </html>
-
