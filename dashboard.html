@@ -31,41 +31,42 @@
   <script>
     const DATA_URL = "https://script.google.com/macros/s/AKfycbwWDyuw9r1IQCWZzGBC2up3pN53X3BpjQRnCDRbZpXsmQ70UYTTjUQQUUXeR80YkqFXTg/exec";
 
-    async function loadData() {
-      try {
-        const response = await fetch(DATA_URL);
-        const entries = await response.json();
+ async function loadData() {
+  try {
+    const response = await fetch(DATA_URL);
+    const entries = await response.json();  // JSON now works!
 
-        const frequency = {};
+    const frequency = {};
 
-        entries.forEach(entry => {
-          entry.words.forEach(word => {
-            if (!word) return;
-            word = word.trim();
-            frequency[word] = (frequency[word] || 0) + 1;
-          });
-        });
+    entries.forEach(entry => {
+      entry.words.forEach(word => {
+        if (!word) return;
+        word = word.trim();
+        frequency[word] = (frequency[word] || 0) + 1;
+      });
+    });
 
-        const wordList = Object.keys(frequency).map(w => [
-          w,
-          frequency[w] * 10
-        ]);
+    const wordList = Object.keys(frequency).map(w => [
+      w,
+      frequency[w] * 10
+    ]);
 
-        WordCloud(document.getElementById("cloud"), {
-          list: wordList,
-          gridSize: 12,
-          weightFactor: 4,
-          color: () => "hsl(" + Math.random() * 360 + ", 80%, 60%)",
-          rotateRatio: 0.1,
-          backgroundColor: "transparent"
-        });
+    WordCloud(document.getElementById("cloud"), {
+      list: wordList,
+      gridSize: 12,
+      weightFactor: 4,
+      color: () => "hsl(" + Math.random() * 360 + ", 80%, 60%)",
+      rotateRatio: 0.1,
+      backgroundColor: "transparent"
+    });
 
-      } catch (err) {
-        console.error("Error loading cloud:", err);
-      }
-    }
+  } catch (err) {
+    console.error("Error loading cloud:", err);
+  }
+}
 
-    loadData();
+loadData();
+
   </script>
 
 </body>
