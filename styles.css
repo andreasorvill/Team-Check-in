@@ -1,0 +1,136 @@
+/* General dark theme styling */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #121212;
+  color: #fff;
+}
+
+/* Login screen */
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.login-logo {
+  max-width: 350px;
+  margin-bottom: 30px;
+}
+
+.login-card {
+  background-color: #1d1d1d;
+  padding: 30px;
+  border-radius: 12px;
+  text-align: center;
+  width: 90%;
+  max-width: 400px;
+}
+
+.login-card input {
+  display: block;
+  width: 100%;
+  margin: 12px 0;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background-color: #222;
+  color: #fff;
+}
+
+.login-card button {
+  padding: 12px;
+  width: 100%;
+  border: none;
+  border-radius: 6px;
+  background-color: #003d72;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.login-card button:hover {
+  background-color: #0055a5;
+}
+
+.error-msg {
+  color: #ff4d4d;
+}
+
+/* Check-in screen */
+.hidden { display: none; }
+
+.checkin-container {
+  max-width: 700px;
+  margin: 40px auto;
+  padding: 20px;
+  text-align: center;
+}
+
+.small-logo {
+  max-width: 120px;
+  margin-bottom: 20px;
+}
+
+.word-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.word-item {
+  background-color: #ffcb05;
+  color: #000;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid #444;
+}
+
+.word-item.selected {
+  background-color: #003d72;
+  color: #fff;
+}
+
+textarea {
+  width: 100%;
+  height: 120px;
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background-color: #222;
+  color: #fff;
+  resize: vertical;
+}
+
+button {
+  margin-top: 20px;
+  width: 100%;
+  padding: 12px;
+  background-color: #003d72;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+button:disabled {
+  background: #555;
+  cursor: not-allowed;
+}
+
+.admin-only {
+  margin-top: 15px;
+  background-color: #ffcb05;
+  color: #000;
+}
+
+.admin-only:hover {
+  background-color: #ffc000;
+}
