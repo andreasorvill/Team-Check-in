@@ -3,20 +3,80 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Team Word Cloud</title>
+  <title>SANA – Weekly Word Cloud</title>
 
+  <!-- Epiroc Theme -->
   <style>
+    :root {
+      --epiroc-yellow: #f2c300;
+      --epiroc-dark: #003057;
+      --bg-light: #f6f6f6;
+    }
+
     body {
       font-family: Arial, sans-serif;
+      margin: 0;
+      background: var(--bg-light);
+      color: var(--epiroc-dark);
       text-align: center;
+    }
+
+    header {
+      background: var(--epiroc-dark);
       padding: 20px;
-      background: #f6f6f6;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+    }
+
+    header img {
+      height: 45px;
+    }
+
+    h1 {
+      margin-top: 20px;
+      color: var(--epiroc-dark);
+      font-size: 28px;
+    }
+
+    p {
+      font-size: 16px;
+      margin-bottom: 25px;
+    }
+
+    #cloud-container {
+      width: 95%;
+      max-width: 1100px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
 
     #cloud {
-      width: 90%;
-      margin: 0 auto;
-      height: 80vh;
+      height: 75vh;
+      width: 100%;
+    }
+
+    .back-btn {
+      margin-top: 20px;
+      display: inline-block;
+      padding: 12px 24px;
+      background: var(--epiroc-yellow);
+      color: var(--epiroc-dark);
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: 0.2s ease;
+    }
+
+    .back-btn:hover {
+      background: #ffdd33;
     }
   </style>
 
@@ -25,25 +85,42 @@
 </head>
 
 <body>
-  <h1>Team Weekly Word Cloud</h1>
+
+  <!-- HEADER WITH LOGO -->
+  <header>
+    <img src="images/SANA_Yellow_bkg.png" alt="SANA Logo" />
+    <img src="images/SANA_simple.png" alt="Epiroc Logo" />
+  </header>
+
+  <h1>Weekly Word Cloud</h1>
   <p>The most frequently selected words appear largest.</p>
 
-  <div id="cloud"></div>
+  <div id="cloud-container">
+    <div id="cloud"></div>
+  </div>
+
+  <!-- Optional Back Button (Admin Only) -->
+  <a href="index.html" class="back-btn" id="backBtn" style="display:none;">
+    ← Back to Check-In
+  </a>
 
   <script>
-    // ORIGINAL URL
-    const RAW_API = "https://script.google.com/macros/s/AKfycbwWDyuw9r1IQCWZzGBC2up3pN53X3BpjQRnCDRbZpXsmQ70UYTTjUQQUUXeR80YkqFXTg/exec";
+    /****** ADMIN ACCESS CHECK ******/
+    const isAdmin = localStorage.getItem("sanaRole") === "admin";
+    if (isAdmin) {
+      document.getElementById("backBtn").style.display = "inline-block";
+    }
 
-    const DATA_URL = RAW_API;
+    /****** LOAD WORD CLOUD ******/
+    const RAW_API = "https://script.google.com/macros/s/AKfycbwWDyuw9r1IQCWZzGBC2up3pN53X3BpjQRnCDRbZpXsmQ70UYTTjUQQUUXeR80YkqFXTg/exec";
 
     async function loadData() {
       try {
-        const response = await fetch(DATA_URL);
+        const response = await fetch(RAW_API);
         const entries = await response.json();
 
         const frequency = {};
 
-        // Count word frequencies
         entries.forEach(entry => {
           entry.words.forEach(word => {
             word = word.trim();
@@ -53,7 +130,6 @@
           });
         });
 
-        // Prepare list for the wordcloud library
         const wordList = Object.keys(frequency).map(w => [
           w,
           frequency[w] * 10
@@ -65,15 +141,17 @@
           weightFactor: 4,
           color: () => "hsl(" + Math.random() * 360 + ", 70%, 50%)",
           rotateRatio: 0.1,
-          backgroundColor: "#f6f6f6"
+          backgroundColor: "#ffffff"
         });
 
       } catch (err) {
-        console.error("Error loading word cloud:", err);
+        console.error("Error loading cloud:", err);
       }
     }
 
     loadData();
   </script>
+
 </body>
 </html>
+
