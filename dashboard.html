@@ -29,7 +29,10 @@
   </div>
 
   <script>
-    const DATA_URL = "https://script.google.com/macros/s/AKfycbwWDyuw9r1IQCWZzGBC2up3pN53X3BpjQRnCDRbZpXsmQ70UYTTjUQQUUXeR80YkqFXTg/exec";
+    const DATA_URL =
+  "https://corsproxy.io/?" +
+  encodeURIComponent("https://script.google.com/macros/s/AKfycbwWDyuw9r1IQCWZzGBC2up3pN53X3BpjQRnCDRbZpXsmQ70UYTTjUQQUUXeR80YkqFXTg/exec");
+
 
     async function loadData() {
       try {
