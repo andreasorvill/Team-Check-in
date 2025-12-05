@@ -3,129 +3,217 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SANA Weekly Check-In</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <div class="login-container">
-    <img src="images/SANA_Yellow_bkg.png" alt="SANA Logo" class="login-logo">
+  <title>SANA – Weekly Check-In</title>
 
-    <div class="login-card">
-      <h1>Weekly Check-In</h1>
-      <input type="text" id="name" placeholder="Your Name (optional)">
-      <input type="password" id="password" placeholder="Enter Password">
-      <button id="loginBtn">Login</button>
-      <p id="loginError" class="error-msg"></p>
-    </div>
+  <link rel="stylesheet" href="styles.css">
+
+  <style>
+    /* CATEGORY HEADERS */
+    .category-title {
+      margin-top: 25px;
+      margin-bottom: 8px;
+      font-size: 18px;
+      font-weight: 600;
+      color: #fff;
+      text-align: left;
+    }
+
+    /* WORD BUTTONS (soft pastel, colored borders) */
+    .word-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .word-btn {
+      padding: 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.08);
+      cursor: pointer;
+      text-align: center;
+      font-size: 15px;
+      transition: 0.2s;
+      user-select: none;
+    }
+
+    .word-btn:hover {
+      background: rgba(255,255,255,0.18);
+    }
+
+    /* COLORS BY CATEGORY */
+    .positive   { border: 2px solid #68d391; }   /* soft green */
+    .neutral    { border: 2px solid #e6d784; }   /* soft yellow/neutral */
+    .negative   { border: 2px solid #e8877e; }   /* soft coral/red */
+
+    /* SELECTED STATES */
+    .selected.positive  { background: #68d39133; }
+    .selected.neutral   { background: #e6d78433; }
+    .selected.negative  { background: #e8877e33; }
+
+    /* LOGIN + GENERAL LAYOUT OVERRIDES */
+    .hidden { display: none !important; }
+  </style>
+</head>
+
+<body class="index-body">
+
+  <!-- LOGIN CONTAINER -->
+  <div id="loginContainer" class="login-box">
+    <img src="images/SANA_logo.png" class="login-logo" alt="SANA Logo">
+
+    <h2>Welcome to Team Check-In</h2>
+    <p>Please enter the weekly password:</p>
+
+    <input id="password" type="password" placeholder="Password">
+    <div id="loginError" class="error-msg"></div>
+
+    <button id="loginBtn" class="action-btn">Login</button>
   </div>
 
-  <div class="checkin-container hidden">
-    <img src="images/SANA_simple.png" alt="SANA Logo" class="small-logo">
+  <!-- CHECK-IN CONTAINER -->
+  <div id="checkinContainer" class="checkin-box hidden">
+
+    <!-- Small logo after login -->
+    <img src="images/SANA_simple.png" class="checkin-logo" alt="SANA Logo">
+
     <h2>Weekly Check-In</h2>
-    <p>Select up to <strong>three</strong> words that describe your week:</p>
 
-    <div id="wordContainer" class="word-list"></div>
+    <p style="color:#fff;">Select up to <strong>three</strong> words that describe your week:</p>
 
-    <p>Optional comment:</p>
+    <div id="wordSection"></div>
+
+    <p class="category-title" style="margin-top:25px;">Optional Comment</p>
     <textarea id="comment" placeholder="Write your reflection here..."></textarea>
 
-    <button id="submitBtn" disabled>Submit</button>
-    <button id="dashboardBtn" class="admin-only hidden">View Dashboard</button>
+    <button id="submitBtn" class="action-btn" disabled>Submit</button>
+    <button id="dashboardBtn" class="action-btn hidden" style="background:#003d72;margin-top:10px;"
+      onclick="window.location.href='dashboard.html'">
+      View Dashboard (Admin)
+    </button>
   </div>
 
-  <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbwWDyuw9r1IQCWZzGBC2up3pN53X3BpjQRnCDRbZpXsmQ70UYTTjUQQUUXeR80YkqFXTg/exec";
-    const USER_PASSWORD = "Weekly123!";
-    const ADMIN_PASSWORD = "Adminweekly!";
+<script>
+  /* LOGIN LOGIC */
 
-    const loginContainer = document.querySelector(".login-container");
-    const checkinContainer = document.querySelector(".checkin-container");
-    const dashboardBtn = document.getElementById("dashboardBtn");
-    const loginError = document.getElementById("loginError");
+  const USER_PASSWORD = "Weekly123!";
+  const ADMIN_PASSWORD = "Adminweekly!";
 
-    document.getElementById("loginBtn").addEventListener("click", () => {
-  const pw = document.getElementById("password").value.trim();
+  const loginContainer   = document.getElementById("loginContainer");
+  const checkinContainer = document.getElementById("checkinContainer");
+  const dashboardBtn     = document.getElementById("dashboardBtn");
+  const loginError       = document.getElementById("loginError");
 
-  if (pw === USER_PASSWORD || pw === ADMIN_PASSWORD) {
+  document.getElementById("loginBtn").addEventListener("click", () => {
+    const pw = document.getElementById("password").value.trim();
 
-    // Assign role
-    if (pw === ADMIN_PASSWORD) {
-      localStorage.setItem("role", "admin");
+    if (pw === USER_PASSWORD || pw === ADMIN_PASSWORD) {
+
+      if (pw === ADMIN_PASSWORD) {
+        localStorage.setItem("role", "admin");
+      } else {
+        localStorage.setItem("role", "user");
+      }
+
+      loginContainer.classList.add("hidden");
+      checkinContainer.classList.remove("hidden");
+
+      if (pw === ADMIN_PASSWORD) {
+        dashboardBtn.classList.remove("hidden");
+      }
+
     } else {
-      localStorage.setItem("role", "user");
+      loginError.textContent = "Incorrect password";
     }
+  });
 
-    loginContainer.classList.add("hidden");
-    checkinContainer.classList.remove("hidden");
+  /* WORD LIST (Evidence-based distribution) */
 
-    if (pw === ADMIN_PASSWORD) {
-      dashboardBtn.classList.remove("hidden");
-    }
+  const words = {
+    positive: [
+      "Motivated","Energized","Excited","Inspired","Productive",
+      "Calm","Content","Satisfied","Grateful","Hopeful",
+      "Supported","Appreciated","Confident"
+    ],
+    neutral: [
+      "Reflective","Distracted"
+    ],
+    negative: [
+      "Stressed","Overwhelmed","Tired","Frustrated","Pressured"
+    ]
+  };
 
-  } else {
-    loginError.textContent = "Incorrect password";
-  }
-});
+  /* RENDER WORD BUTTONS */
 
+  const wordSection = document.getElementById("wordSection");
+  let selectedWords = [];
 
-    // Word selection logic
-    const words = [
-      "Stressed", "Satisfied", "Bored", "Motivated", "Tired",
-      "Inspired", "Frustrated", "Happy", "Pressured", "Calm",
-      "Hopeful", "Grateful", "Productive", "Confused", "Focused",
-      "Excited", "Defeated", "Content"
-    ];
-    const container = document.getElementById("wordContainer");
-    const submitBtn = document.getElementById("submitBtn");
-    let selected = [];
+  function renderCategory(title, categoryClass, list) {
+    const titleEl = document.createElement("div");
+    titleEl.className = "category-title";
+    titleEl.textContent = title;
 
-    words.forEach(word => {
-      const div = document.createElement("div");
-      div.className = "word-item";
-      div.innerText = word;
+    const grid = document.createElement("div");
+    grid.className = "word-grid";
 
-      div.addEventListener("click", () => {
-        if (selected.includes(word)) {
-          selected = selected.filter(w => w !== word);
-          div.classList.remove("selected");
+    list.forEach(word => {
+      const btn = document.createElement("div");
+      btn.className = `word-btn ${categoryClass}`;
+      btn.textContent = word;
+
+      btn.addEventListener("click", () => {
+        if (selectedWords.includes(word)) {
+          selectedWords = selectedWords.filter(w => w !== word);
+          btn.classList.remove("selected");
         } else {
-          if (selected.length < 3) {
-            selected.push(word);
-            div.classList.add("selected");
+          if (selectedWords.length < 3) {
+            selectedWords.push(word);
+            btn.classList.add("selected");
           }
         }
-        submitBtn.disabled = selected.length === 0;
+        document.getElementById("submitBtn").disabled = selectedWords.length === 0;
       });
 
-      container.appendChild(div);
+      grid.appendChild(btn);
     });
 
-    submitBtn.addEventListener("click", async () => {
-      const name = document.getElementById("name").value.trim();
-      const comment = document.getElementById("comment").value;
+    wordSection.appendChild(titleEl);
+    wordSection.appendChild(grid);
+  }
 
-      const payload = { name, words: selected, comment };
+  renderCategory("Positive", "positive", words.positive);
+  renderCategory("Neutral",  "neutral",  words.neutral);
+  renderCategory("Negative", "negative", words.negative);
 
-      try {
-       await fetch(API_URL, {
-  method: "POST",
-  mode: "no-cors",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify(payload)
-});
+  /* SUBMIT HANDLER */
 
-        alert("Thank you! Your check-in has been submitted.");
-        window.location.reload();
-      } catch (err) {
-        console.error("Submit error:", err);
-        alert("Something went wrong submitting the form.");
-      }
-    });
+  const API_URL = 
+    "https://sana-cors-proxy.andreas-orvill.workers.dev/?url=" +
+    encodeURIComponent("https://script.google.com/macros/s/AKfycbwWDyuw9r1IQCWZzGBC2up3pN53X3BpjQRnCDRbZpXsmQ70UYTTjUQQUUXeR80YkqFXTg/exec");
 
-    dashboardBtn.addEventListener("click", () => {
-      window.location.href = "dashboard.html";
-    });
-  </script>
+  document.getElementById("submitBtn").addEventListener("click", async () => {
+    const comment = document.getElementById("comment").value.trim();
+
+    const payload = {
+      words: selectedWords,
+      comment: comment
+    };
+
+    try {
+      await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      alert("Thank you! Your check-in has been submitted.");
+      window.location.reload();
+    } catch (err) {
+      alert("Something went wrong submitting the form.");
+      console.error(err);
+    }
+  });
+</script>
+
 </body>
 </html>
 
