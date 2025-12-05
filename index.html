@@ -7,25 +7,16 @@
   <link rel="stylesheet" href="styles.css">
 
   <style>
-    /* CATEGORY HEADERS */
-    .category-title {
-      margin-top: 25px;
-      margin-bottom: 6px;
-      font-size: 18px;
-      font-weight: 600;
-      color: #fff;
-      text-align: left;
-    }
-
-    /* GRID LAYOUT */
-    .category-grid {
+    /* Two-column unified grid */
+    .word-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 10px;
-      margin-bottom: 10px;
+      margin-top: 20px;
+      margin-bottom: 20px;
     }
 
-    /* SOFT BORDER BUTTON STYLE (Style B) */
+    /* Soft pastel style buttons */
     .word-btn {
       padding: 10px;
       border-radius: 8px;
@@ -33,8 +24,8 @@
       cursor: pointer;
       text-align: center;
       font-size: 15px;
-      transition: 0.2s;
       user-select: none;
+      transition: 0.2s;
     }
 
     .word-btn:hover {
@@ -42,11 +33,11 @@
     }
 
     /* Border colors by category */
-    .positive { border: 2px solid #68d391; }
-    .neutral  { border: 2px solid #e6d784; }
-    .negative { border: 2px solid #e8877e; }
+    .positive { border: 2px solid #68d391; }   /* soft green */
+    .neutral  { border: 2px solid #e6d784; }   /* soft yellow */
+    .negative { border: 2px solid #e8877e; }   /* soft coral */
 
-    /* Selected states */
+    /* Selected state */
     .selected.positive { background: #68d39133; }
     .selected.neutral  { background: #e6d78433; }
     .selected.negative { background: #e8877e33; }
@@ -71,9 +62,10 @@
   <div class="checkin-container hidden">
     <img src="images/SANA_simple.png" alt="SANA Logo" class="small-logo">
     <h2>Weekly Check-In</h2>
+
     <p>Select up to <strong>three</strong> words that describe your week:</p>
 
-    <div id="wordContainer"></div>
+    <div id="wordContainer" class="word-grid"></div>
 
     <p>Optional comment:</p>
     <textarea id="comment" placeholder="Write your reflection here..."></textarea>
@@ -117,62 +109,55 @@
     }
   });
 
-  /* =======================
-     UPDATED WORD LIST
-     Evidence-Based Distribution
-     ======================= */
-  const words = {
-    positive: [
-      "Motivated","Energized","Excited","Inspired","Productive",
-      "Calm","Content","Satisfied","Grateful","Hopeful",
-      "Supported","Appreciated","Confident"
-    ],
-    neutral: [
-      "Reflective","Distracted"
-    ],
-    negative: [
-      "Stressed","Overwhelmed","Tired","Frustrated","Pressured"
-    ]
-  };
+  /* ===========================
+     NEW WORD LIST (MIXED ORDER)
+     =========================== */
+  const wordList = [
+    // Mixed for natural distribution
+    { text: "Motivated",    type: "positive" },
+    { text: "Stressed",     type: "negative" },
+    { text: "Reflective",   type: "neutral"  },
+    { text: "Excited",      type: "positive" },
+    { text: "Overwhelmed",  type: "negative" },
+    { text: "Inspired",     type: "positive" },
+    { text: "Distracted",   type: "neutral"  },
+    { text: "Tired",        type: "negative" },
+    { text: "Grateful",     type: "positive" },
+    { text: "Confident",    type: "positive" },
+    { text: "Calm",         type: "positive" },
+    { text: "Pressed",      type: "negative" },
+    { text: "Content",      type: "positive" },
+    { text: "Satisfied",    type: "positive" },
+    { text: "Supported",    type: "positive" },
+    { text: "Frustrated",   type: "negative" },
+    { text: "Appreciated",  type: "positive" },
+    { text: "Hopeful",      type: "positive" },
+    { text: "Energized",    type: "positive" },
+    { text: "Productive",   type: "positive" }
+  ];
 
   const wordContainer = document.getElementById("wordContainer");
   let selected = [];
 
-  function renderCategory(title, categoryClass, wordList) {
-    const header = document.createElement("div");
-    header.className = "category-title";
-    header.textContent = title;
+  /* RENDER 20 WORD BUTTONS IN 2×10 GRID */
+  wordList.forEach(entry => {
+    const btn = document.createElement("div");
+    btn.className = `word-btn ${entry.type}`;
+    btn.textContent = entry.text;
 
-    const grid = document.createElement("div");
-    grid.className = "category-grid";
-
-    wordList.forEach(word => {
-      const btn = document.createElement("div");
-      btn.className = `word-btn ${categoryClass}`;
-      btn.textContent = word;
-
-      btn.addEventListener("click", () => {
-        if (selected.includes(word)) {
-          selected = selected.filter(w => w !== word);
-          btn.classList.remove("selected");
-        } else if (selected.length < 3) {
-          selected.push(word);
-          btn.classList.add("selected");
-        }
-        document.getElementById("submitBtn").disabled = selected.length === 0;
-      });
-
-      grid.appendChild(btn);
+    btn.addEventListener("click", () => {
+      if (selected.includes(entry.text)) {
+        selected = selected.filter(w => w !== entry.text);
+        btn.classList.remove("selected");
+      } else if (selected.length < 3) {
+        selected.push(entry.text);
+        btn.classList.add("selected");
+      }
+      document.getElementById("submitBtn").disabled = selected.length === 0;
     });
 
-    wordContainer.appendChild(header);
-    wordContainer.appendChild(grid);
-  }
-
-  /* RENDER ALL CATEGORIES */
-  renderCategory("Positive", "positive", words.positive);
-  renderCategory("Neutral",  "neutral",  words.neutral);
-  renderCategory("Negative", "negative", words.negative);
+    wordContainer.appendChild(btn);
+  });
 
   /* SUBMIT */
   document.getElementById("submitBtn").addEventListener("click", async () => {
@@ -192,12 +177,11 @@
       window.location.reload();
 
     } catch (err) {
-      alert("Something went wrong submitting the form.");
+      alert("Something went wrong submitting.");
       console.error(err);
     }
   });
 
-  /* ADMIN DASHBOARD BUTTON */
   dashboardBtn.addEventListener("click", () => {
     window.location.href = "dashboard.html";
   });
