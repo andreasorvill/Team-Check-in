@@ -118,18 +118,21 @@
         const cloudEl = document.getElementById("cloud");
         cloudEl.innerHTML = "";
 
-        // Reliable size detection
-        const rect = cloudEl.getBoundingClientRect();
-        let w = Math.floor(rect.width);
-        let h = Math.floor(rect.height);
+// Remove previous canvas
+cloudEl.innerHTML = "";
 
-        if (w < 50) w = 600;
-        if (h < 50) h = 400;
+// Always use a safe fixed-size canvas to avoid sizing errors
+const canvas = document.createElement("canvas");
 
-        const canvas = document.createElement("canvas");
-        canvas.width = w;
-        canvas.height = h;
-        cloudEl.appendChild(canvas);
+// Best size for readability on most screens
+canvas.width = 900;
+canvas.height = 500;
+
+// Centering using CSS
+canvas.style.display = "block";
+canvas.style.margin = "0 auto";
+
+cloudEl.appendChild(canvas);
 
         WordCloud(canvas, {
           list: list,
