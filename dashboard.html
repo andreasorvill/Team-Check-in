@@ -9,8 +9,9 @@
 
   <!-- WordCloud2.js -->
   <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.3/src/wordcloud2.min.js"></script>
+
   <style>
-    /* minimal override just to make sure canvas area is visible */
+    /* Ensures the cloud box always has a real height */
     #cloud {
       width: 100%;
       height: 72vh;
@@ -18,52 +19,61 @@
       border-radius: 12px;
       padding: 10px;
       box-sizing: border-box;
+      position: relative;
     }
   </style>
 </head>
+
 <body class="dashboard-body">
+
   <div class="dashboard-container">
+    
     <img src="images/SANA_simple.png" class="dashboard-logo" alt="SANA Logo">
+    
     <h1 class="dashboard-title">Weekly Word Cloud</h1>
     <p class="dashboard-subtitle">The most frequently selected words appear largest.</p>
 
-    <div id="cloud" class="cloud-box" aria-live="polite"></div>
+    <div id="cloud" class="cloud-box"></div>
 
     <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;">
       <button class="back-btn" onclick="window.location.href='index.html'">← Back to Check-In</button>
       <button class="back-btn" id="reloadBtn" style="background:#003d72;color:#fff;">Reload</button>
     </div>
+
   </div>
 
+
   <script>
-    // RAW and proxied API (Cloudflare Worker)
-    const RAW_API = "https://script.google.com/macros/s/AKfycbwWDyuw9r1IQCWZzGBC2up3pN53X3BpjQRnCDRbZpXsmQ70UYTTjUQQUUXeR80YkqFXTg/exec";
+    // RAW Apps Script endpoint
+    const RAW_API =
+      "https://script.google.com/macros/s/AKfycbwWDyuw9r1IQCWZzGBC2up3pN53X3BpjQRnCDRbZpXsmQ70UYTTjUQQUUXeR80YkqFXTg/exec";
+
+    // Cloudflare Worker proxy for CORS
     const PROXY = "https://sana-cors-proxy.andreas-orvill.workers.dev/?url=";
 
-    // Add timestamp to force fresh response (cache-buster)
-    function buildDataUrl() {
+    // Always fetch fresh data (prevents browser/GitHub cache)
+    function buildURL() {
       return PROXY + encodeURIComponent(RAW_API) + "&t=" + Date.now();
     }
 
+
     async function loadDataAndRender() {
-      const DATA_URL = buildDataUrl();
-      console.log("Fetching data from:", DATA_URL);
+      const DATA_URL = buildURL();
+      console.log("Fetching:", DATA_URL);
 
       try {
         const res = await fetch(DATA_URL);
-        const entries = await res.json(); // expects pure JSON
+        const entries = await res.json();
 
-        console.log("Entries received:", entries.length);
-        // debug: list the first few entries to console
-        console.log("Sample entries:", entries.slice(0, 8));
+        console.log("Entries:", entries.length);
+        console.log("Sample:", entries.slice(0, 8));
 
-        // Build frequency map across all submissions and all 3 word columns
+        // Count frequencies
         const freq = {};
         entries.forEach(entry => {
-          if (!entry || !entry.words) return;
+          if (!entry?.words) return;
           entry.words.forEach(w => {
-            if (!w) return;
-            const clean = w.trim();
+            const clean = w?.trim();
             if (!clean) return;
             freq[clean] = (freq[clean] || 0) + 1;
           });
@@ -72,100 +82,81 @@
         console.log("Frequency map:", freq);
 
         const words = Object.keys(freq);
-        if (words.length === 0) {
-          // nothing to draw
-          const cloudEl = document.getElementById("cloud");
-          cloudEl.innerHTML = "<div style='color:#ccc;padding:18px'>No submitted words yet.</div>";
+        if (!words.length) {
+          document.getElementById("cloud").innerHTML =
+            "<div style='color:#ccc;padding:18px'>No submitted words yet.</div>";
           return;
         }
 
-        // Determine min/max counts
+        // Determine min/max values
         const counts = Object.values(freq);
         const minCount = Math.min(...counts);
         const maxCount = Math.max(...counts);
 
-        // Map counts -> font size (px) and color (HSL)
-        // We'll produce deterministic sizes so words are stable across redraws
         function sizeForCount(count) {
-          const minSize = 14;  // px
-          const maxSize = 72;  // px
+          const minSize = 16;
+          const maxSize = 70;
           if (maxCount === minCount) return (minSize + maxSize) / 2;
           const t = (count - minCount) / (maxCount - minCount);
-          // ease-out scaling for better visual differences
-          return Math.round(minSize + Math.pow(t, 0.9) * (maxSize - minSize));
+          return Math.round(minSize + Math.pow(t, 0.85) * (maxSize - minSize));
         }
 
         function colorForCount(count) {
-          // map frequency to a hue between green (positive) and red (alert)
-          // but keep it deterministic: high count -> warmer hue
-          const minHue = 200; // bluish
-          const maxHue = 40;  // warm yellow/red
-          if (maxCount === minCount) return `hsl(${(minHue+maxHue)/2},70%,55%)`;
+          // high frequency = warmer color
+          const minHue = 220; // blue
+          const maxHue = 45;  // orange/red
+          if (maxCount === minCount) return `hsl(${(minHue + maxHue) / 2},70%,55%)`;
           const t = (count - minCount) / (maxCount - minCount);
           const hue = Math.round(minHue + (maxHue - minHue) * t);
-          return `hsl(${hue},75%,55%)`;
+          return `hsl(${hue},75%,60%)`;
         }
 
-        // Prepare list for wordcloud2 (word, fontSize)
-        const list = Object.keys(freq).map(w => {
-          const count = freq[w];
-          const size = sizeForCount(count);
-          return [w, size];
-        });
+        // Prepare list
+        const list = words.map(w => [w, sizeForCount(freq[w])])
+                          .sort((a, b) => b[1] - a[1]);
 
-        // Sort by size descending — this helps layout be stable and puts big words first
-        list.sort((a, b) => b[1] - a[1]);
-
-        // Clear previous cloud content (important)
         const cloudEl = document.getElementById("cloud");
-        cloudEl.innerHTML = ""; // clear previous canvas if any
+        cloudEl.innerHTML = "";
 
-        // Create a canvas element inside #cloud — WordCloud will insert a canvas
+        // Reliable size detection
+        const rect = cloudEl.getBoundingClientRect();
+        let w = Math.floor(rect.width);
+        let h = Math.floor(rect.height);
+
+        if (w < 50) w = 600;
+        if (h < 50) h = 400;
+
         const canvas = document.createElement("canvas");
-        canvas.width = cloudEl.clientWidth;
-        canvas.height = cloudEl.clientHeight;
+        canvas.width = w;
+        canvas.height = h;
         cloudEl.appendChild(canvas);
 
-        // WordCloud options:
         WordCloud(canvas, {
           list: list,
-          gridSize: Math.round(16 * (canvas.width / 800)), // adapt to size
-          weightFactor: function(word, weight) {
-            // word is the text, weight is our font size we supplied
-            // return the font size in px directly
-            return weight;
-          },
+          gridSize: Math.round(14 * (canvas.width / 800)),
+          weightFactor: (word, weight) => weight,
           fontFamily: "Arial, sans-serif",
-          color: function(word, weight) {
-            // deterministic color based on frequency
-            const c = colorForCount(freq[word]);
-            return c;
-          },
-          rotateRatio: 0.05,
+          color: word => colorForCount(freq[word]),
+          rotateRatio: 0.08,
           rotationSteps: 2,
-          backgroundColor: "transparent",
-          drawOutOfBound: false,
-          ellipticity: 1,
-          // abort if too few words? WordCloud takes care of it
+          backgroundColor: "transparent"
         });
 
       } catch (err) {
         console.error("Error loading cloud:", err);
-        const cloudEl = document.getElementById("cloud");
-        cloudEl.innerHTML = "<div style='color:#ff9999;padding:18px'>Error loading cloud — check console.</div>";
+        document.getElementById("cloud").innerHTML =
+          "<div style='color:#ffaaaa;padding:15px'>Error loading cloud.</div>";
       }
     }
 
-    // initial load
+
+    // Initial load
     loadDataAndRender();
 
-    // reload button for testing
-    document.getElementById("reloadBtn").addEventListener("click", () => {
-      loadDataAndRender();
-    });
+    // Allow manual reload
+    document.getElementById("reloadBtn").addEventListener("click", loadDataAndRender);
 
-    // optional: auto-refresh every 3 minutes
-    // setInterval(loadDataAndRender, 180000);
   </script>
+
 </body>
 </html>
