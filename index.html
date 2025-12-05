@@ -44,17 +44,29 @@
     const loginError = document.getElementById("loginError");
 
     document.getElementById("loginBtn").addEventListener("click", () => {
-      const pw = document.getElementById("password").value.trim();
-      if (pw === USER_PASSWORD || pw === ADMIN_PASSWORD) {
-        loginContainer.classList.add("hidden");
-        checkinContainer.classList.remove("hidden");
-        if (pw === ADMIN_PASSWORD) {
-          dashboardBtn.classList.remove("hidden");
-        }
-      } else {
-        loginError.textContent = "Incorrect password";
-      }
-    });
+  const pw = document.getElementById("password").value.trim();
+
+  if (pw === USER_PASSWORD || pw === ADMIN_PASSWORD) {
+
+    // Assign role
+    if (pw === ADMIN_PASSWORD) {
+      localStorage.setItem("role", "admin");
+    } else {
+      localStorage.setItem("role", "user");
+    }
+
+    loginContainer.classList.add("hidden");
+    checkinContainer.classList.remove("hidden");
+
+    if (pw === ADMIN_PASSWORD) {
+      dashboardBtn.classList.remove("hidden");
+    }
+
+  } else {
+    loginError.textContent = "Incorrect password";
+  }
+});
+
 
     // Word selection logic
     const words = [
