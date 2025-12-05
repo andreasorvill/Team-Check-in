@@ -7,19 +7,23 @@
 
   <link rel="stylesheet" href="styles.css">
 
-  <!-- WordCloud2.js -->
-  <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.3/src/wordcloud2.min.js"></script>
+  <!-- D3 + D3-Cloud -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-cloud/build/d3.layout.cloud.min.js"></script>
 
   <style>
-    /* Ensures the cloud box always has a real height */
     #cloud {
       width: 100%;
       height: 72vh;
       background: #1f1f1f;
       border-radius: 12px;
-      padding: 10px;
-      box-sizing: border-box;
       position: relative;
+      overflow: hidden;
+    }
+
+    svg {
+      width: 100%;
+      height: 100%;
     }
   </style>
 </head>
@@ -33,29 +37,23 @@
     <h1 class="dashboard-title">Weekly Word Cloud</h1>
     <p class="dashboard-subtitle">The most frequently selected words appear largest.</p>
 
-    <div id="cloud" class="cloud-box"></div>
+    <div id="cloud"></div>
 
     <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;">
       <button class="back-btn" onclick="window.location.href='index.html'">← Back to Check-In</button>
       <button class="back-btn" id="reloadBtn" style="background:#003d72;color:#fff;">Reload</button>
     </div>
-
   </div>
 
-
   <script>
-    // RAW Apps Script endpoint
     const RAW_API =
       "https://script.google.com/macros/s/AKfycbwWDyuw9r1IQCWZzGBC2up3pN53X3BpjQRnCDRbZpXsmQ70UYTTjUQQUUXeR80YkqFXTg/exec";
 
-    // Cloudflare Worker proxy for CORS
     const PROXY = "https://sana-cors-proxy.andreas-orvill.workers.dev/?url=";
 
-    // Always fetch fresh data (prevents browser/GitHub cache)
     function buildURL() {
       return PROXY + encodeURIComponent(RAW_API) + "&t=" + Date.now();
     }
-
 
     async function loadDataAndRender() {
       const DATA_URL = buildURL();
@@ -66,102 +64,89 @@
         const entries = await res.json();
 
         console.log("Entries:", entries.length);
-        console.log("Sample:", entries.slice(0, 8));
 
-        // Count frequencies
+        // Build frequency map
         const freq = {};
         entries.forEach(entry => {
-          if (!entry?.words) return;
           entry.words.forEach(w => {
-            const clean = w?.trim();
-            if (!clean) return;
+            if (!w) return;
+            const clean = w.trim();
             freq[clean] = (freq[clean] || 0) + 1;
           });
         });
 
         console.log("Frequency map:", freq);
 
-        const words = Object.keys(freq);
-        if (!words.length) {
+        const cloudWords = Object.keys(freq).map(word => ({
+          text: word,
+          size: freq[word],
+        }));
+
+        if (!cloudWords.length) {
           document.getElementById("cloud").innerHTML =
             "<div style='color:#ccc;padding:18px'>No submitted words yet.</div>";
           return;
         }
 
-        // Determine min/max values
-        const counts = Object.values(freq);
-        const minCount = Math.min(...counts);
-        const maxCount = Math.max(...counts);
+        // D3 cloud dimensions
+        const cloudBox = document.getElementById("cloud");
+        const width = cloudBox.clientWidth;
+        const height = cloudBox.clientHeight;
 
-        function sizeForCount(count) {
-          const minSize = 16;
-          const maxSize = 70;
-          if (maxCount === minCount) return (minSize + maxSize) / 2;
-          const t = (count - minCount) / (maxCount - minCount);
-          return Math.round(minSize + Math.pow(t, 0.85) * (maxSize - minSize));
+        // Center-heavy scaling
+        const maxFreq = d3.max(cloudWords, d => d.size);
+        const fontSize = d3.scaleSqrt()
+          .domain([1, maxFreq])
+          .range([15, 90]); // min/max font size
+
+        // Remove previous SVG
+        cloudBox.innerHTML = "";
+
+        // Create cloud layout
+        const layout = d3.layout.cloud()
+          .size([width, height])
+          .words(cloudWords)
+          .padding(8)
+          .font("Arial")
+          .fontSize(d => fontSize(d.size))
+          .spiral("archimedean")  // nice smooth expansion from center
+          .rotate(0)              // horizontal only
+          .on("end", draw);
+
+        layout.start();
+
+        function draw(words) {
+          const svg = d3.select("#cloud")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .append("g")
+            .attr("transform", `translate(${width / 2},${height / 2})`);
+
+          // color scale from cool → warm
+          const color = d3.scaleLinear()
+            .domain([1, maxFreq])
+            .range(["#7fa9ff", "#ffb347"]);
+
+          svg.selectAll("text")
+            .data(words)
+            .enter().append("text")
+            .style("font-family", "Arial")
+            .style("font-size", d => d.size + "px")
+            .style("fill", d => color(freq[d.text]))
+            .attr("text-anchor", "middle")
+            .attr("transform", d => `translate(${d.x},${d.y})`)
+            .text(d => d.text);
         }
-
-        function colorForCount(count) {
-          // high frequency = warmer color
-          const minHue = 220; // blue
-          const maxHue = 45;  // orange/red
-          if (maxCount === minCount) return `hsl(${(minHue + maxHue) / 2},70%,55%)`;
-          const t = (count - minCount) / (maxCount - minCount);
-          const hue = Math.round(minHue + (maxHue - minHue) * t);
-          return `hsl(${hue},75%,60%)`;
-        }
-
-        // Prepare list
-        const list = words.map(w => [w, sizeForCount(freq[w])])
-                          .sort((a, b) => b[1] - a[1]);
-
-        const cloudEl = document.getElementById("cloud");
-        cloudEl.innerHTML = "";
-
-// Remove previous canvas
-cloudEl.innerHTML = "";
-
-// Always use a safe fixed-size canvas to avoid sizing errors
-const canvas = document.createElement("canvas");
-
-// Best size for readability on most screens
-canvas.width = 900;
-canvas.height = 500;
-
-// Centering using CSS
-canvas.style.display = "block";
-canvas.style.margin = "0 auto";
-
-cloudEl.appendChild(canvas);
-
-WordCloud(canvas, {
-  list: list,
-  gridSize: 18,
-  weightFactor: (word, size) => size,
-  fontFamily: "Arial, sans-serif",
-  color: word => colorForCount(freq[word]),
-  rotateRatio: 0,            // ← disables rotation COMPLETELY
-  rotationSteps: 0,          // ← WordCloud won't calculate angled boxes
-  backgroundColor: "transparent",
-  drawOutOfBound: false,
-  shrinkToFit: true,         // ← prevents invalid x/y ranges
-  shape: "circle"            // ← circle avoids negative coordinates
-});
 
       } catch (err) {
         console.error("Error loading cloud:", err);
-        document.getElementById("cloud").innerHTML =
-          "<div style='color:#ffaaaa;padding:15px'>Error loading cloud.</div>";
       }
     }
 
-
-    // Initial load
     loadDataAndRender();
 
-    // Allow manual reload
     document.getElementById("reloadBtn").addEventListener("click", loadDataAndRender);
-
   </script>
 
 </body>
